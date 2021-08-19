@@ -9,7 +9,7 @@ sap.ui.define([
 
 		return Controller.extend("appgit.controller.View1", {
 			onInit: function () {
-
+                //alert("aa");
 			}
 		});
 	});

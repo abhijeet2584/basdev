@@ -1,0 +1,94 @@
+_schema-version: "3.2"
+ID: appgit
+description: A Fiori application.
+version: 0.0.1
+modules:
+- name: appgit-dest-content
+  type: com.sap.application.content
+  requires:
+  - name: appgit-dest-srv
+    parameters:
+      content-target: true
+  - name: appgit-repo-host
+    parameters:
+      service-key:
+        name: appgit-repo-host-key
+  - name: appgit-uaa
+    parameters:
+      service-key:
+        name: appgit-uaa-key
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Name: appgit_repo_host
+          ServiceInstanceName: appgit-html5-srv
+          ServiceKeyName: appgit-repo-host-key
+          sap.cloud.service: appgit
+        - Authentication: OAuth2UserTokenExchange
+          Name: appgit_uaa
+          ServiceInstanceName: appgit-xsuaa-srv
+          ServiceKeyName: appgit-uaa-key
+          sap.cloud.service: appgit
+        existing_destinations_policy: ignore
+  build-parameters:
+    no-source: true
+- name: appgit-app-content
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: appgit-repo-host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - appgit.zip
+      name: appgit
+      target-path: resources/
+- name: appgit
+  type: html5
+  path: .
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+resources:
+- name: appgit-dest-srv
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: true
+      init_data:
+        instance:
+          destinations:
+          - Authentication: NoAuthentication
+            Name: ui5
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://ui5.sap.com
+          existing_destinations_policy: update
+      version: 1.0.0
+    service: destination
+    service-name: appgit-dest-srv
+    service-plan: lite
+- name: appgit-uaa
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: appgit-xsuaa-srv
+    service-plan: application
+- name: appgit-repo-host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: appgit-html5-srv
+    service-plan: app-host
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
